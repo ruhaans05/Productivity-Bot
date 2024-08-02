@@ -71,7 +71,6 @@ root = tk.Tk()
 root.title("Productivity Bot")
 
 label = tk.Label(root, text="Enter the link you want to block:")
-duration = tk.Label(root, text="Enter the duration in hours:")
 label.pack(pady=10)
 
 entry = tk.Entry(root, width=50)
@@ -87,4 +86,31 @@ button.pack(pady=20)
 root.mainloop()
 
 
-block_website(label, dur*3600)
+
+
+def duration():
+    dur = entry.get()
+    messagebox.showinfo("Time:", f"{dur} hours blocked")
+
+root = tk.Tk()
+root.title("Productivity Bot")
+
+label = tk.Label(root, text="How long would you like to block for (in hours):")
+label.pack(pady=10)
+
+entry = tk.Entry(root, width=50)
+entry.pack(pady=5)
+
+button = tk.Button(root, text="Submit", command=duration)
+button.pack(pady=20)
+
+
+# https://gmail.com/
+# c:\Users\shind\Downloads\blocker.py
+
+root.mainloop()
+
+
+
+
+block_website(show_link, duration)
