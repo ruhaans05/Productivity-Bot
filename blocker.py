@@ -3,114 +3,105 @@ import os
 import platform
 import tkinter as tk
 from tkinter import messagebox
+from datetime import datetime as dt 
+from datetime import timedelta
+import threading
+import ctypes, sys
 
-
-def print_script_path_info():
-    # __file__ contains the path to the script
-    script_path = os.path.abspath(__file__)
-    script_dir = os.path.dirname(script_path)
-    script_name = os.path.basename(script_path)
-
-    print(f"Full script path: {script_path}")
-    print(f"Script directory: {script_dir}")
-    print(f"Script name: {script_name}")
-
-if __name__ == "__main__":
-    print_script_path_info()
-
-
-def block_website(domain, duration):
-    # Determine the hosts file location based on the OS
-    hosts_path = "/etc/hosts" if platform.system() != "Windows" else r"C:\Windows\System32\drivers\etc\hosts"
-    
-    redirect_ip = "127.0.0.1"
-    entry = f"{redirect_ip} {domain}\n"
-    
+def is_admin():
     try:
-        # Backup the hosts file
-        with open(hosts_path, 'r') as file:
-            hosts_content = file.readlines()
+        return ctypes.windll.shell32.IsUserAnAdmin()
+    except:
+        return False
 
-        # Check if the domain is already blocked
-        if any(domain in line for line in hosts_content):
-            print(f"{domain} is already blocked.")
-            return
+
+
+if is_admin():
+    def print_script_path_info():
+        # __file__ contains the path to the script
+        script_path = os.path.abspath(__file__)
+        script_dir = os.path.dirname(script_path)
+        script_name = os.path.basename(script_path)
+
+        print(f"Full script path: {script_path}")
+        print(f"Script directory: {script_dir}")
+        print(f"Script name: {script_name}")
+
+    if __name__ == "__main__":
+        print_script_path_info()
+
+
+    def block_website(duration, url):
+        # change hosts path according to your OS 
+        if platform.system() == "Windows":
+            hosts_path = r"C:\Windows\System32\drivers\etc\hosts"
+        else:
+            hosts_path = "/etc/hosts"
         
-        # Append the block entry to the hosts file
-        with open(hosts_path, 'a') as file:
-            file.write(entry)
+        # localhost's IP 
+        redirect = "127.0.0.1"
+        end_time = dt.now() + timedelta(hours=duration)
         
-        print(f"{domain} has been blocked.")
-        
-        # Wait for the specified duration
-        time.sleep(duration)
-        
-        # Remove the block entry from the hosts file
-        with open(hosts_path, 'w') as file:
-            for line in hosts_content:
-                if domain not in line:
-                    file.write(line)
-        
-        print(f"{domain} has been unblocked.")
-    
-    except PermissionError:
-        print("Run as admin in command prompt")
-    except Exception as e:
-        print(f"An error occurred: {e}")
+        try:
+            while dt.now() < end_time: 
+                    with open(hosts_path, 'r+') as file: 
+                        content = file.read() 
+                        if url not in content: 
+                            file.write(redirect + " " + url + "\n") 
+                    time.sleep(5)
 
-# Get user input
+            
+            # Removing the block after the duration
+            with open(hosts_path, 'r+') as file: 
+                content = file.readlines() 
+                file.seek(0)
+                for line in content: 
+                    if url not in line: 
+                        file.write(line) 
+                file.truncate() 
 
-import tkinter as tk
-from tkinter import messagebox
-
-def show_link():
-    link = entry.get()
-    messagebox.showinfo("Blocking", f"{link}")
-
-root = tk.Tk()
-root.title("Productivity Bot")
-
-label = tk.Label(root, text="Enter the link you want to block:")
-label.pack(pady=10)
-
-entry = tk.Entry(root, width=50)
-entry.pack(pady=5)
-
-button = tk.Button(root, text="Submit", command=show_link)
-button.pack(pady=20)
+            print("Blocking completed.")
+        except IOError:
+            print("Could not modify files. Please try and run with admin privileges.")
+            messagebox.showerror("Error. Run with admin rights.")
 
 
-# https://gmail.com/
-# c:\Users\shind\Downloads\blocker.py
+    # Get user input
 
-root.mainloop()
+    import tkinter as tk
+    from tkinter import messagebox
+
+    def show_link():
+        url = entry_link.get()
+        try:
+            duration = float(entry_duration.get())
+            messagebox.showinfo("Blocking until goals achieved:", f"{url}")
+            threading.Thread(target=block_website, args=(duration, url)).start()
+        except ValueError:
+            messagebox.showerror("Invalid, please enter in hours.")
+
+    root = tk.Tk()
+    root.title("Productivity Bot")
+
+    label = tk.Label(root, text="Enter the link you want to block:")
+    label.pack(pady=10)
+
+    entry_link = tk.Entry(root, width=50)
+    entry_link.pack(pady=5)
+
+    label = tk.Label(root, text="How long would you like to block for (in hours):")
+    label.pack(pady=10)
+
+    entry_duration = tk.Entry(root, width=50)
+    entry_duration.pack(pady=5)
+
+    button = tk.Button(root, text="Submit", command=show_link)
+    button.pack(pady=20)
 
 
+    # https://gmail.com/
+    # c:\Users\shind\Downloads\blocker.py
 
-
-def duration():
-    dur = entry.get()
-    messagebox.showinfo("Time:", f"{dur} hours blocked")
-
-root = tk.Tk()
-root.title("Productivity Bot")
-
-label = tk.Label(root, text="How long would you like to block for (in hours):")
-label.pack(pady=10)
-
-entry = tk.Entry(root, width=50)
-entry.pack(pady=5)
-
-button = tk.Button(root, text="Submit", command=duration)
-button.pack(pady=20)
-
-
-# https://gmail.com/
-# c:\Users\shind\Downloads\blocker.py
-
-root.mainloop()
-
-
-
-
-block_website(show_link, duration)
+    root.mainloop()
+else:
+    ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
