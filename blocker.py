@@ -13,6 +13,12 @@ def is_admin():
         return ctypes.windll.shell32.IsUserAnAdmin()
     except:
         return False
+    
+def flush_dns(): #save this to flush dns cache
+    if platform.system() == "Windows":
+        result = os.system("ipconfig /flushdns")
+        if result != 0:
+            raise RuntimeError("Failed to flush DNS cache. Please rerun with admin rights.")
 
 
 
@@ -49,8 +55,7 @@ if is_admin():
                     file.write(f"{redirect} {url}\n")
             
             #Flush dns cache
-            if platform.system() == "Windows":
-                os.system("ipconfig /flushdns")
+            flush_dns()
 
             
             # Removing the block after the duration
@@ -62,14 +67,16 @@ if is_admin():
                         file.write(line) 
                 file.truncate() 
                 
-            #flush dns cache (removes other ip addresses/dns caches)
-            if platform.system() == "Windows":
-                os.system("ipconfig /flushdns")
+            flush_dns()
 
             print("Blocking completed.")
         except IOError:
             print("Could not modify files. Please try and run with admin privileges.")
             messagebox.showerror("Error. Please run with admin rights.")
+        except RuntimeError:
+            print("Could not modify files. Please try and run with admin privileges.")
+            messagebox.showerror("Flush DNS error. PLease run with admin rights.")
+            
 
 
     # Get user input
