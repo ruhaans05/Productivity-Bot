@@ -43,12 +43,14 @@ if is_admin():
         end_time = dt.now() + timedelta(hours=duration)
         
         try:
-            while dt.now() < end_time: 
-                    with open(hosts_path, 'r+') as file: 
-                        content = file.read() 
-                        if url not in content: 
-                            file.write(redirect + " " + url + "\n") 
-                    time.sleep(5)
+            with open(hosts_path, "r+") as file:
+                content = file.read()
+                if url not in content:
+                    file.write(f"{redirect} {url}\n")
+            
+            #Flush dns cache
+            if platform.system() == "Windows":
+                os.system("ipconfig /flushdns")
 
             
             # Removing the block after the duration
@@ -59,11 +61,15 @@ if is_admin():
                     if url not in line: 
                         file.write(line) 
                 file.truncate() 
+                
+            #flush dns cache (removes other ip addresses/dns caches)
+            if platform.system() == "Windows":
+                os.system("ipconfig /flushdns")
 
             print("Blocking completed.")
         except IOError:
             print("Could not modify files. Please try and run with admin privileges.")
-            messagebox.showerror("Error. Run with admin rights.")
+            messagebox.showerror("Error. Please run with admin rights.")
 
 
     # Get user input
